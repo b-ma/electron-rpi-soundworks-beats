@@ -8,7 +8,8 @@
   "scripts": {
     "debug": "electron ./src/main.js",
     "deploy": "./bin/runner --deploy",
-    "start": "./node_modules/nodemon/bin/nodemon.js --ignore node_modules --exec \"xvfb-run -a electron ./src/main.js\"",
+    "start": "xvfb-run -a electron ./src/main.js",
+    "watch": "./node_modules/nodemon/bin/nodemon.js --ignore node_modules --exec \"xvfb-run -a electron ./src/main.js\"",
     "watch-src": "./bin/runner --watch-src"
   },
   "dependencies": {
