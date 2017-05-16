@@ -17,6 +17,7 @@ let mainWindow;
 let config;
 
 ipcMain.on('config:request', (event, args) => event.returnValue = config);
+ipcMain.on('audio:time', (event, args) => console.log(args));
 
 function init() {
   getConfig()

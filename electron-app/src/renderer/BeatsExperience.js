@@ -1,5 +1,8 @@
 const { Experience, View, audioContext } = require('soundworks/client');
 const Synth = require('./Synth');
+const electron = require('electron');
+
+const ipcRenderer = electron.ipcRenderer;
 
 class BeatsPerformance extends Experience {
   constructor() {
@@ -52,7 +55,7 @@ class BeatsPerformance extends Experience {
 
     // define latency
     (function logAudioTime() {
-      console.log(audioContext.currentTime);
+      ipcRenderer.sendSync('audio:time', audioContext.currentTime);
       setTimeout(logAudioTime, 5);
     }());
   }
