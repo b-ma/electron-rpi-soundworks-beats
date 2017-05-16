@@ -52,10 +52,10 @@ class BeatsPerformance extends Experience {
     });
 
     // define latency
-    (function logAudioTime() {
-      ipcRenderer.send('audio:time', audioContext.currentTime);
-      setTimeout(logAudioTime, 5);
-    }());
+    // (function logAudioTime() {
+    //   ipcRenderer.send('audio:time', audioContext.currentTime);
+    //   setTimeout(logAudioTime, 5);
+    // }());
   }
 }
 
