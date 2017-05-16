@@ -42,8 +42,6 @@ class BeatsPerformance extends Experience {
     this.synth = new Synth(this.sync); // a Web Audio synth that makes sound
     this.synth.connect(audioContext.destination);
 
-    // this.view = new View(template, this.model, {}, { id: this.id });
-    // this.show();
     // when the server sends the beat loop start time
     this.receive('start:beat', (startTime, beatPeriod) => {
       this.synth.play(startTime, beatPeriod);
@@ -55,7 +53,7 @@ class BeatsPerformance extends Experience {
 
     // define latency
     (function logAudioTime() {
-      ipcRenderer.sendSync('audio:time', audioContext.currentTime);
+      ipcRenderer.send('audio:time', audioContext.currentTime);
       setTimeout(logAudioTime, 5);
     }());
   }
