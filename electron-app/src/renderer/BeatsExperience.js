@@ -49,6 +49,12 @@ class BeatsPerformance extends Experience {
     this.sharedParams.addParamListener('gain', (gain) => {
       this.synth.gain = gain;
     });
+
+    // define latency
+    (function logAudioTime() {
+      console.log(audioContext.currentTime);
+      setTimeout(logAudioTime, 5);
+    }());
   }
 }
 
