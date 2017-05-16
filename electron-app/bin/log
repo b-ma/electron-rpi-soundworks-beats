@@ -1,0 +1,60 @@
+#!/usr/bin/env node
+const pkg = require('../package.json');
+const colors = require('colors');
+const path = require('path');
+
+const prefix = '[' + pkg.name + ']\t';
+
+function getDeltaTime(time) {
+  return new Date().getTime() - time;
+}
+
+const log = {
+  transpileSuccess: function(src, dest, startTime) {
+    const time = getDeltaTime(startTime);
+    const msg = prefix + '%s: successfully transpiled to "%s" (%sms)'.green;
+
+    console.log(msg, toRel(src), toRel(dest), time);
+    return Promise.resolve();
+  },
+
+  transpileError: function(err) {
+    const parts = err.message.split(':');
+    const msg = prefix + '%s'.red;
+
+    console.log(msg, toRel(err.message));
+    console.log(err.codeFrame);
+    return Promise.resolve();
+  },
+
+  deleteFile: function(filename) {
+    const msg = prefix + '%s: successfully removed'.yellow;
+    console.log(msg, toRel(filename));
+    return Promise.resolve();
+  },
+
+  sendCreateSuccess: function(file) {
+    const msg = prefix + '%s: successfully created'.green;
+    console.log(msg, file.rel);
+    return Promise.resolve(file);
+  },
+
+  sendUpdateSuccess: function(file) {
+    const msg = prefix + '%s: successfully updated'.green;
+    console.log(msg, file.rel);
+    return Promise.resolve(file);
+  },
+
+  sendDeleteSuccess: function(file) {
+    const msg = prefix + '%s: successfully deleted'.green;
+    console.log(msg, file.rel);
+    return Promise.resolve(file);
+  },
+
+  // sendError: function(file) {
+  //   console.log('send error');
+  //   return Promise.resolve(file);
+  // },
+};
+
+module.exports = log;

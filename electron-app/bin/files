@@ -1,0 +1,49 @@
+#!/usr/bin/env node
+const path = require('path');
+
+const dictionnary = new Map();
+const cwd = process.cwd();
+
+/**
+ *
+ */
+module.exports.get = (abs) => {
+  let file = dictionnary.get(abs);
+
+  if (file === undefined) {
+    const rel = path.relative(cwd, abs);
+    file = { abs, rel };
+
+    dictionnary.set(abs, file);
+  }
+
+  return Promise.resolve(file);
+}
+
+/**
+ *
+ */
+module.exports.delete = (file) => {
+  dictionnary.delete(file.abs);
+  return Promise.resolve(file);
+}
+
+/**
+ *
+ */
+module.exports.filter = (file, regexp) => {
+  if (regexp.test(file.rel))
+    return Promise.reject(file);
+
+  return Promise.resolve(file);
+}
+
+/**
+ *
+ */
+module.exports.match = (file, regexp) => {
+  if (regexp.test(file.rel))
+    return Promise.resolve(file);
+
+  return Promise.reject(file);
+}

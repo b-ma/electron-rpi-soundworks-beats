@@ -1,0 +1,17 @@
+#!/usr/bin/env node
+const client = require('scp2');
+
+function send(file, server) {
+  const target = `${server.username}:${server.password}@${server.host}:${server.path}/${file.rel}`;
+
+  return new Promise((resolve, reject) => {
+    client.scp(file.abs, target, (err) => {
+      if (err)
+        throw err;
+
+      resolve(file);
+    });
+  });
+}
+
+module.exports.send = send;

@@ -1,0 +1,45 @@
+#!/usr/bin/env node
+const ToSSH = require('to-ssh');
+const dictionnary = new Map();
+
+function getConnection(server) {
+  let promisedSsh = dictionnary.get(server);
+
+  if (promisedSsh === undefined) {
+    promisedSsh = new Promise((resolve, reject) => {
+      const ssh = new ToSSH({
+        host: server.host,
+        username: server.username,
+        password: server.password,
+      });
+
+      ssh.connect((err) => {
+        if (err)
+          throw err;
+
+        resolve(ssh);
+      });
+    });
+
+    dictionnary.set(server, promisedSsh);
+  }
+
+  return promisedSsh;
+}
+
+module.exports.rm = (file, server) => {
+  const promisedSsh = getConnection(server);
+  const remotePath = `${server.path}/${file.rel}`;
+  const cmd = `rm -Rf ${remotePath}`;
+
+  return promisedSsh.then((ssh) => {
+    return new Promise((resolve, reject) => {
+      ssh.addTask(cmd, function(stdout, stderr) {
+        if (stderr)
+          throw new Error(stderr);
+
+        resolve(file);
+      });
+    });
+  });
+}

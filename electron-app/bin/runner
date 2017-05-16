@@ -1,0 +1,155 @@
+#!/usr/bin/env node
+const config = require('../config.json');
+// const fse = require('fs-extra');
+// const klaw = require('klaw');
+const fs = require('fs');
+const log = require('./log');
+const path = require('path');
+const pkg = require('../package.json');
+const watch = require('watch');
+
+// promise based middlewares
+const files = require('./files');
+const scp = require('./scp');
+const ssh = require('./ssh');
+const servers = require('./servers');
+
+
+// Promise.all([Promise.resolve(true), new Promise(() => { throw new Error('test'); }) ])
+//   .then((res) => console.log(res))
+//   .catch((err) => console.error(err.message));
+
+// Returns a list of the file in a given folder recursively.
+// function _getFileList(folder, callback) {
+//   const files = [];
+
+//   klaw(folder)
+//     .on('data', function(item) {
+//       if (item.stats.isFile() && isAllowed(item.path))
+//         files.push(item.path);
+//     })
+//     .on('end', function() {
+//       callback(files);
+//     });
+// }
+
+
+
+// local watch
+function watchLocal(srcDirectory, watchOptions) {
+  watch.createMonitor(srcDirectory, watchOptions, function(monitor) {
+    monitor.on('created', function(filename, stats) {
+      files.get(filename)
+        .then(file => files.filter(file, /^node_modules/))
+        .then(file => {
+          return servers
+            .all(server => scp.send(file, server))
+            .then(() => log.sendCreateSuccess(file));
+        }, file => {
+          return files.delete(file);
+        })
+        .catch(err => console.error(err.stack));
+    });
+
+    monitor.on('changed', function(filename, stats) {
+      files.get(filename)
+        .then(file => files.filter(file, /^node_modules/))
+        .then(file => {
+          return servers
+            .all(server => scp.send(file, server))
+            .then(() => log.sendUpdateSuccess(file));
+        }, file => {
+          return files.delete(file);
+        })
+        .catch(err => console.error(err.stack));
+    });
+
+    monitor.on('removed', function(filename, stats) {
+      files.get(filename)
+        .then(file => files.filter(file, /^node_modules/))
+        .then(file => files.delete(file))
+        .then(file => {
+          return servers
+            .all(server => ssh.rm(file, server))
+            .then(() => log.sendDeleteSuccess(file));
+        }, file => {
+          return files.delete(file);
+        })
+        .catch(err => console.error(err.stack));
+    });
+  });
+}
+
+function deploy(srcDirectory) {
+  const srcFiles = fs.readdirSync(srcDirectory);
+  srcFiles.forEach(filename => {
+    files.get(filename)
+      .then(file => files.filter(file, /^node_modules|npm-debug.log|\.git/))
+      .then(file => {
+          return servers
+            .all(server => scp.send(file, server))
+            .then(() => log.sendUpdateSuccess(file));
+        }, file => {
+          return files.delete(file);
+        })
+        .catch(err => console.error(err.stack));
+  })
+}
+
+function distWatch(srcDirectory, watchOptions) {
+  watch.createMonitor(srcDirectory, watchOptions, function(monitor) {
+    monitor.on('created', function(filename, stats) {
+      // restart app or do nothing ?
+    });
+
+    monitor.on('changed', function(filename, stats) {
+      // if package.json stop, install, start
+      // else restart
+    });
+
+    monitor.on('removed', function(filename, stats) {
+      // restart
+    });
+  });
+}
+
+/* --------------------------------------------------------------------------
+ * Process and execute the given command.
+ * -------------------------------------------------------------------------- */
+
+const cwd = process.cwd();
+
+const watchOptions = {
+  ignoreDotFiles: true,
+  ignoreUnreadableDir: true,
+  ignoreNotPermitted: true,
+  interval: 2,
+};
+
+const command = process.argv[2];
+
+// const args = process.argv.slice(3);
+// const argv = {};
+// for (let i = 0; i < args.length; i += 2)
+//   argv[args[i]] = args[i + 1];
+
+switch (command) {
+  case '--deploy':
+    servers.configure(config.dist);
+    deploy(cwd);
+    break;
+  // watch the file system and transpile from es6 to es5.
+  case '--watch-src':
+    servers.configure(config.dist);
+    watchLocal(cwd, watchOptions);
+    break;
+
+  // transpile all files in `src` from es6 to es5.
+  case '--watch-dist':
+    // transpileFiles(srcDirectory, distDirectory);
+    break;
+}
+
+/* --------------------------------------------------------------------------
+ * -------------------------------------------------------------------------- */
+

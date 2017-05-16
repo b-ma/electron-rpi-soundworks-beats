@@ -25,8 +25,8 @@ server.setClientConfigDefinition((clientType, config, httpRequest) => {
   return {
     clientType: clientType,
     env: config.env,
-    socketIO: config.socketIO,
     appName: config.appName,
+    websockets: config.websockets,
     version: config.version,
     defaultType: config.defaultClient,
     assetsDomain: config.assetsDomain,
@@ -37,7 +37,12 @@ const sharedParams = server.require('shared-params');
 // sharedParams.addBoolean('start', 'Start', false);
 sharedParams.addNumber('gain', 'Gain', 0, 1, 0.01, 1);
 
-const beatsExperience = new BeatsExperience('player');
+const beatsExperience = new BeatsExperience(['player', 'pi']);
 const controllerExperience = new ControllerExperience('controller');
 
-server.start();
+server.start().then(() => {
+  server.router.get('/api/config', (req, res) => {
+    const config = server._clientConfigDefinition('pi', server.config, req);
+    res.json(config);
+  });
+});
